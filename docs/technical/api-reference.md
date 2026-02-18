@@ -1,5 +1,7 @@
 # API Reference
 
+> **Applies to:** Claude Sonnet 4.5 | `src/steroid_v4-5.py` (v4.1.0)
+
 Quick reference for all configuration valves.
 
 ## Admin Valves
@@ -114,6 +116,12 @@ SHOW_CITATIONS: true
 
 ---
 
+## Model
+
+This function targets **Claude Sonnet 4.5** with model ID `claude-sonnet-4-5-20250929` (defined in `src/steroid_v4-5.py`).
+
+---
+
 ## Feature Dependencies
 
 ### Extended Thinking
@@ -123,7 +131,7 @@ SHOW_CITATIONS: true
 **Affected by:**
 - `THINKING_BUDGET_TOKENS` (quality/cost)
 
-**Beta header:** `interleaved-thinking-2025-05-14`
+**Beta header (Sonnet 4.5):** `interleaved-thinking-2025-05-14`
 
 ---
 
@@ -136,7 +144,7 @@ SHOW_CITATIONS: true
 - `WEB_SEARCH_DOMAIN_ALLOWLIST` OR `WEB_SEARCH_DOMAIN_BLOCKLIST` (not both)
 - `WEB_SEARCH_MAX_USES`
 
-**Beta header:** `web-search-2025-03-05`
+**Beta header (Sonnet 4.5):** `web-search-2025-03-05`
 
 ---
 
@@ -149,7 +157,7 @@ SHOW_CITATIONS: true
 - `CACHE_SYSTEM_PROMPT` (cache system prompt)
 - `CACHE_USER_MESSAGES` (cache previous messages)
 
-**Beta header:** `prompt-caching-2024-07-31`
+**Beta header (Sonnet 4.5):** `prompt-caching-2024-07-31`
 
 ---
 
@@ -165,7 +173,7 @@ SHOW_CITATIONS: true
 - `ENABLE_SKILL_PDF` (PDF)
 - `CUSTOM_SKILL_IDS` (custom skills)
 
-**Beta headers:**
+**Beta headers (Sonnet 4.5):**
 - `code-execution-2025-08-25`
 - `skills-2025-10-02`
 - `files-api-2025-04-14`

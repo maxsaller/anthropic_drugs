@@ -26,7 +26,7 @@ Visit [console.anthropic.com](https://console.anthropic.com/) and generate an AP
 
 1. Navigate to **Workspace → Functions** in OpenWebUI
 2. Click **+ Add Function**
-3. Copy the contents of [`function.py`](function.py)
+3. Copy the contents of [`src/steroid_v4-5.py`](src/steroid_v4-5.py)
 4. Paste into the editor and click **Save**
 
 ### 3. Configure
@@ -85,11 +85,12 @@ See [Examples Guide](docs/guides/examples.md) for detailed optimization strategi
 
 ## 🔄 Version History
 
-**v4.0.0** (Current) - [`function.py`](function.py)
+**v4.1.0** (Current) - Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`) - [`src/steroid_v4-5.py`](src/steroid_v4-5.py)
 - ✅ `<think>` tags for collapsible reasoning
 - ✅ Web search query accumulation fixed
 - ✅ Clean UI without icons
 - ✅ Citation chips working
+- ✅ Image support (base64 and URL)
 
 **v3.0.0** - [`archive/v3.0.0/function.py`](archive/v3.0.0/function.py)
 - ❌ Deprecated (HTML rendering issues, query capture broken)

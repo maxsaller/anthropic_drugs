@@ -1,5 +1,7 @@
 # Installation Guide
 
+> **Applies to:** Claude Sonnet 4.5 | `src/steroid_v4-5.py` (v4.1.0)
+
 Step-by-step instructions for installing Claude Sonnet 4.5 Complete in OpenWebUI.
 
 ## Prerequisites
@@ -37,7 +39,7 @@ You should see the Functions management page.
 ### Option A: Copy-Paste (Recommended)
 
 1. Click **+ Add Function** button (top-right)
-2. Open [`function.py`](../../function.py) from this repository
+2. Open [`src/steroid_v4-5.py`](../../src/steroid_v4-5.py) from this repository
 3. Copy the entire contents (Cmd/Ctrl + A, then Cmd/Ctrl + C)
 4. Paste into the OpenWebUI editor
 5. Click **Save** (bottom-right)
@@ -47,7 +49,7 @@ You should see the Functions management page.
 1. Click **+ Add Function** → **Import**
 2. Enter the raw GitHub URL:
    ```
-   https://raw.githubusercontent.com/[your-username]/steroid_sonnet/main/function.py
+   https://raw.githubusercontent.com/[your-username]/steroid_sonnet/main/src/steroid_v4-5.py
    ```
 3. Click **Import**
 4. Click **Save**
@@ -182,7 +184,7 @@ When a new version is released:
 1. Navigate to **Workspace → Functions**
 2. Find "Claude Sonnet 4.5 (Complete)"
 3. Click **Edit**
-4. Copy new `function.py` contents
+4. Copy new `src/steroid_v4-5.py` contents
 5. Paste over existing code
 6. Click **Save**
 

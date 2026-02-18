@@ -1,5 +1,7 @@
 # Configuration Guide
 
+> **Applies to:** Claude Sonnet 4.5 | `src/steroid_v4-5.py` (v4.1.0)
+
 Complete reference for all configuration options (valves) in Claude Sonnet 4.5 Complete.
 
 ## Configuration Overview

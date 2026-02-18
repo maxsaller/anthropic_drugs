@@ -1,5 +1,7 @@
 # Architecture Documentation
 
+> **Applies to:** Claude Sonnet 4.5 | `src/steroid_v4-5.py` (v4.1.0)
+
 ## Overview
 
 Claude Sonnet 4.5 Complete is a production-ready OpenWebUI pipe function that provides full access to Anthropic's latest Claude features including extended thinking, web search, prompt caching, and code execution.
@@ -50,7 +52,7 @@ Claude Sonnet 4.5 Complete is a production-ready OpenWebUI pipe function that pr
 ┌─────────────────────────────────────────────────────────────┐
 │                    Anthropic API                            │
 │                                                             │
-│  • Claude Sonnet 4.5 Model                                  │
+│  • Claude Sonnet 4.5 Model (claude-sonnet-4-5-20250929)      │
 │  • Extended Thinking Engine                                 │
 │  • Web Search Service                                       │
 │  • Code Execution Sandbox                                   │

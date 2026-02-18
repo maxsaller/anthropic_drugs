@@ -1,5 +1,7 @@
 # Usage Examples
 
+> **Applies to:** Claude Sonnet 4.5 | `src/steroid_v4-5.py` (v4.1.0)
+
 Real-world usage patterns, configuration examples, and cost optimization strategies.
 
 ## Table of Contents
@@ -259,7 +261,7 @@ Generate Q4 2024 financial report using our template.
 
 ### Understanding Claude Sonnet 4.5 Pricing
 
-**Current rates** (as of Nov 2024):
+**Current rates for Claude Sonnet 4.5 (model ID: `claude-sonnet-4-5-20250929`)** (as of Nov 2024):
 - Input: $3.00 per million tokens (MTok)
 - Output: $15.00 per MTok
 - Cache write: $3.75 per MTok

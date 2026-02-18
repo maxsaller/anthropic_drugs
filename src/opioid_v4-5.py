@@ -1,9 +1,9 @@
 """
-title: Claude Sonnet 4.5 Complete v3
+title: Claude Opus 4.5 Complete v4.1
 author: Enhanced by AI
-version: 3.0.0
+version: 4.1.0
 license: MIT
-description: Production-ready Claude Sonnet 4.5 with all modern features: extended thinking, prompt caching, web search, skills, code execution, and premium UX
+description: Production-ready Claude Opus 4.5 with <think> tags for reasoning, web search, skills, and clean UX
 requirements: requests, pydantic
 """
 
@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class ThinkingState(Enum):
     """Thinking process states"""
+
     NOT_STARTED = 0
     IN_PROGRESS = 1
     COMPLETED = 2
@@ -34,6 +35,7 @@ class ThinkingState(Enum):
 @dataclass
 class CitationData:
     """Structured citation information"""
+
     url: str
     title: str
     cited_text: str = ""
@@ -43,13 +45,16 @@ class CitationData:
 @dataclass
 class WebSearchResult:
     """Web search result data"""
+
     query: str
     results: List[Dict[str, Any]] = field(default_factory=list)
+    partial_json_buffer: str = ""  # Accumulate partial JSON fragments
 
 
 @dataclass
 class StreamingState:
     """State management for streaming responses"""
+
     thinking_state: ThinkingState = ThinkingState.NOT_STARTED
     thinking_buffer: str = ""
     response_buffer: str = ""
@@ -59,180 +64,141 @@ class StreamingState:
     current_block_type: Optional[str] = None
     current_search: Optional[WebSearchResult] = None
     current_search_results: List[Dict[str, Any]] = field(default_factory=list)
-    all_events: List[Dict[str, Any]] = field(default_factory=list)  # Store all events for citation extraction
+    all_events: List[Dict[str, Any]] = field(
+        default_factory=list
+    )  # Store all events for citation extraction
 
 
 # ==================== MAIN PIPE CLASS ====================
 
 
 class Pipe:
-    """Claude Sonnet 4.5 Complete Integration for OpenWebUI"""
+    """Claude Opus 4.5 Complete Integration for OpenWebUI"""
 
     class Valves(BaseModel):
         """Admin-configurable settings"""
 
         # API & Core Settings
-        ANTHROPIC_API_KEY: str = Field(
-            default="",
-            description="Your Anthropic API key"
-        )
+        ANTHROPIC_API_KEY: str = Field(default="", description="Your Anthropic API key")
         DEFAULT_MAX_TOKENS: int = Field(
-            default=8192,
-            description="Default maximum tokens for responses (max 8192)"
+            default=8192, description="Default maximum tokens for responses (max 8192)"
         )
         DEFAULT_TEMPERATURE: float = Field(
-            default=1.0,
-            description="Default temperature (0.0-1.0)"
+            default=1.0, description="Default temperature (0.0-1.0)"
         )
         REQUEST_TIMEOUT: int = Field(
-            default=300,
-            description="API request timeout in seconds"
+            default=300, description="API request timeout in seconds"
         )
 
         # Extended Thinking
         ENABLE_EXTENDED_THINKING: bool = Field(
-            default=True,
-            description="Enable extended thinking for complex reasoning"
+            default=True, description="Enable extended thinking for complex reasoning"
         )
         THINKING_BUDGET_TOKENS: int = Field(
             default=10000,
-            description="Thinking budget in tokens (1024-16000 recommended)"
+            description="Thinking budget in tokens (1024-16000 recommended)",
         )
 
         # Prompt Caching
         ENABLE_PROMPT_CACHING: bool = Field(
-            default=True,
-            description="Enable prompt caching (reduces cost up to 90%)"
+            default=True, description="Enable prompt caching (reduces cost up to 90%)"
         )
         CACHE_TTL: Literal["5min", "1hour"] = Field(
             default="5min",
-            description="Cache duration: 5min (cheaper) or 1hour (longer sessions)"
+            description="Cache duration: 5min (cheaper) or 1hour (longer sessions)",
         )
         CACHE_SYSTEM_PROMPT: bool = Field(
-            default=True,
-            description="Automatically cache system prompts"
+            default=True, description="Automatically cache system prompts"
         )
         CACHE_USER_MESSAGES: bool = Field(
             default=True,
-            description="Cache recent user messages for stable cache points"
+            description="Cache recent user messages for stable cache points",
         )
 
         # Web Search
         ENABLE_WEB_SEARCH: bool = Field(
-            default=True,
-            description="Enable web search capability"
+            default=True, description="Enable web search capability"
         )
         WEB_SEARCH_MAX_USES: int = Field(
-            default=5,
-            description="Maximum web searches per request (1-20)"
+            default=5, description="Maximum web searches per request (1-20)"
         )
         WEB_SEARCH_DOMAIN_ALLOWLIST: str = Field(
             default="",
-            description="Allowed domains (comma-separated, e.g., 'wikipedia.org,github.com')"
+            description="Allowed domains (comma-separated, e.g., 'wikipedia.org,github.com')",
         )
         WEB_SEARCH_DOMAIN_BLOCKLIST: str = Field(
-            default="",
-            description="Blocked domains (comma-separated)"
+            default="", description="Blocked domains (comma-separated)"
         )
 
         # Code Execution & Skills
         ENABLE_CODE_EXECUTION: bool = Field(
             default=False,
-            description="Enable Python code execution (required for skills)"
+            description="Enable Python code execution (required for skills)",
         )
         ENABLE_SKILL_XLSX: bool = Field(
-            default=True,
-            description="Enable Excel spreadsheet support"
+            default=True, description="Enable Excel spreadsheet support"
         )
         ENABLE_SKILL_PPTX: bool = Field(
-            default=True,
-            description="Enable PowerPoint support"
+            default=True, description="Enable PowerPoint support"
         )
         ENABLE_SKILL_DOCX: bool = Field(
-            default=True,
-            description="Enable Word document support"
+            default=True, description="Enable Word document support"
         )
         ENABLE_SKILL_PDF: bool = Field(
-            default=True,
-            description="Enable PDF generation support"
+            default=True, description="Enable PDF generation support"
         )
         CUSTOM_SKILL_IDS: str = Field(
             default="",
-            description="Comma-separated custom skill IDs from your organization"
+            description="Comma-separated custom skill IDs from your organization",
         )
 
         # UX Settings
-        SHOW_THINKING_PROCESS: bool = Field(
-            default=True,
-            description="Display thinking process in UI"
-        )
         SHOW_WEB_SEARCH_DETAILS: bool = Field(
-            default=True,
-            description="Show full web search results with queries and snippets"
+            default=True, description="Show web search results in collapsible section"
         )
-        SHOW_CITATIONS: bool = Field(
-            default=True,
-            description="Show citation cards inline"
-        )
+        SHOW_CITATIONS: bool = Field(default=True, description="Show citation chips")
         SHOW_TOKEN_USAGE: bool = Field(
-            default=True,
-            description="Display token usage statistics"
-        )
-        SHOW_PROCESSING_STATUS: bool = Field(
-            default=True,
-            description="Show status updates during processing"
+            default=True, description="Display token usage statistics"
         )
 
         # Logging
         LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
-            default="DEBUG",
-            description="Logging verbosity level"
+            default="DEBUG", description="Logging verbosity level"
         )
 
     class UserValves(BaseModel):
         """Per-user configurable settings"""
 
-        THINKING_DISPLAY_MODE: Literal["hidden", "visible"] = Field(
-            default="visible",
-            description="Thinking display: hidden (no details) or visible (show reasoning & web searches in collapsible sections)"
-        )
         ENABLE_MY_WEB_SEARCH: bool = Field(
-            default=True,
-            description="Enable web search for my queries"
+            default=True, description="Enable web search for my queries"
         )
         ENABLE_MY_CODE_EXECUTION: bool = Field(
-            default=False,
-            description="Enable code execution for my queries"
+            default=False, description="Enable code execution for my queries"
         )
 
     API_VERSION = "2023-06-01"
     API_BASE_URL = "https://api.anthropic.com/v1"
-    MODEL_ID = "claude-sonnet-4-5-20250929"
+    MODEL_ID = "claude-opus-4-5-20251101"
 
     def __init__(self):
         self.type = "manifold"
-        self.id = "claude_complete_v3"
+        self.id = "claude_complete_v4"
         self.name = "claude/"
         self.citation = False  # CRITICAL: Disable OpenWebUI auto-citations
 
-        self.valves = self.Valves(
-            ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", "")
-        )
+        self.valves = self.Valves(ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", ""))
         self.user_valves = self.UserValves()
 
         # Set logging level
         log_level = getattr(logging, self.valves.LOG_LEVEL)
         logger.setLevel(log_level)
 
-        logger.info("Claude Sonnet 4.5 Complete v3.0.0 initialized")
+        logger.info("Claude Opus 4.5 Complete v4.0.0 initialized")
 
     def pipes(self) -> List[Dict[str, str]]:
         """Return available model configurations"""
         return [
-            {
-                "id": "claude-sonnet-4.5-complete",
-                "name": "Claude Sonnet 4.5 (Complete)"
-            }
+            {"id": "claude-opus-4.5-complete", "name": "Claude Opus 4.5 (Complete)"}
         ]
 
     # ==================== HELPER METHODS ====================
@@ -247,11 +213,11 @@ class Pipe:
 
         # Check if any skills are enabled
         has_skills = (
-            self.valves.ENABLE_SKILL_XLSX or
-            self.valves.ENABLE_SKILL_PPTX or
-            self.valves.ENABLE_SKILL_DOCX or
-            self.valves.ENABLE_SKILL_PDF or
-            bool(self.valves.CUSTOM_SKILL_IDS.strip())
+            self.valves.ENABLE_SKILL_XLSX
+            or self.valves.ENABLE_SKILL_PPTX
+            or self.valves.ENABLE_SKILL_DOCX
+            or self.valves.ENABLE_SKILL_PDF
+            or bool(self.valves.CUSTOM_SKILL_IDS.strip())
         )
 
         return has_skills or self.valves.ENABLE_CODE_EXECUTION
@@ -259,9 +225,8 @@ class Pipe:
     def _has_tools(self, user_valves) -> bool:
         """Check if any tools are enabled"""
         return (
-            (self.valves.ENABLE_WEB_SEARCH and user_valves.ENABLE_MY_WEB_SEARCH) or
-            self._should_enable_code_execution(user_valves)
-        )
+            self.valves.ENABLE_WEB_SEARCH and user_valves.ENABLE_MY_WEB_SEARCH
+        ) or self._should_enable_code_execution(user_valves)
 
     def _get_headers(self, user_valves) -> Dict[str, str]:
         """Dynamically compose beta headers based on enabled features"""
@@ -290,7 +255,7 @@ class Pipe:
         headers = {
             "x-api-key": self.valves.ANTHROPIC_API_KEY,
             "anthropic-version": self.API_VERSION,
-            "content-type": "application/json"
+            "content-type": "application/json",
         }
 
         if betas:
@@ -308,7 +273,7 @@ class Pipe:
             tool = {
                 "type": "web_search_20250305",
                 "name": "web_search",
-                "max_uses": min(max(1, self.valves.WEB_SEARCH_MAX_USES), 20)
+                "max_uses": min(max(1, self.valves.WEB_SEARCH_MAX_USES), 20),
             }
 
             # Domain filtering (cannot use both allow and block lists)
@@ -355,10 +320,7 @@ class Pipe:
                 ]
                 skill_ids.extend(custom)
 
-            tool = {
-                "type": "code_execution_20250825",
-                "name": "code_execution"
-            }
+            tool = {"type": "code_execution_20250825", "name": "code_execution"}
 
             if skill_ids:
                 tool["container"] = {"skill_ids": skill_ids}
@@ -377,10 +339,7 @@ class Pipe:
         budget = max(1024, min(self.valves.THINKING_BUDGET_TOKENS, 16000))
 
         logger.debug(f"Extended thinking enabled with budget: {budget} tokens")
-        return {
-            "type": "enabled",
-            "budget_tokens": budget
-        }
+        return {"type": "enabled", "budget_tokens": budget}
 
     def _calculate_max_tokens(self, requested_max: int) -> int:
         """
@@ -427,11 +386,13 @@ class Pipe:
 
             if isinstance(system_content, str):
                 # Convert string to array with cache control
-                payload["system"] = [{
-                    "type": "text",
-                    "text": system_content,
-                    "cache_control": cache_control
-                }]
+                payload["system"] = [
+                    {
+                        "type": "text",
+                        "text": system_content,
+                        "cache_control": cache_control,
+                    }
+                ]
                 cache_points += 1
             elif isinstance(system_content, list) and len(system_content) > 0:
                 # Add cache control to last item
@@ -463,7 +424,7 @@ class Pipe:
         body: Dict[str, Any],
         processed_messages: List[Dict[str, Any]],
         system_message: Optional[str],
-        user_valves
+        user_valves,
     ) -> Dict[str, Any]:
         """Assemble the complete API request payload"""
 
@@ -474,7 +435,7 @@ class Pipe:
             "max_tokens": self._calculate_max_tokens(
                 body.get("max_tokens", self.valves.DEFAULT_MAX_TOKENS)
             ),
-            "stream": body.get("stream", True)
+            "stream": body.get("stream", True),
         }
 
         # Temperature
@@ -489,9 +450,7 @@ class Pipe:
         if "top_p" in body:
             payload["top_p"] = body["top_p"]
         if "stop_sequences" in body or "stop" in body:
-            payload["stop_sequences"] = body.get(
-                "stop_sequences", body.get("stop", [])
-            )
+            payload["stop_sequences"] = body.get("stop_sequences", body.get("stop", []))
 
         # System message
         if system_message:
@@ -512,9 +471,64 @@ class Pipe:
 
         return payload
 
-    def _process_messages(
-        self, messages: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _transform_image_content(self, item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Transform OpenAI image_url format to Anthropic image format.
+
+        Handles:
+        - Base64 data URLs (data:image/png;base64,...)
+        - Regular HTTP/HTTPS URLs
+
+        Args:
+            item: Content item with type="image_url"
+
+        Returns:
+            Transformed content item with type="image"
+        """
+        # Extract URL from nested structure
+        image_url_obj = item.get("image_url", {})
+        url = image_url_obj.get("url", "")
+
+        if not url:
+            logger.warning("Image content missing URL, passing through as-is")
+            return item
+
+        # Check if it's a data URL (base64)
+        if url.startswith("data:"):
+            # Parse: data:image/png;base64,iVBORw0K...
+            try:
+                # Split into parts
+                header, data = url.split(",", 1)
+                # Extract media type (e.g., "image/png")
+                media_type = header.split(";")[0].split(":")[1]
+
+                logger.debug(f"Transformed base64 image with media_type={media_type}")
+                return {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": data,
+                    },
+                }
+            except (ValueError, IndexError) as e:
+                logger.warning(f"Malformed data URL: {e}, defaulting to image/jpeg")
+                # Fallback: try to extract just the data part
+                data = url.split(",", 1)[-1] if "," in url else ""
+                return {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": data,
+                    },
+                }
+        else:
+            # Regular URL
+            logger.debug(f"Transformed URL image: {url[:50]}...")
+            return {"type": "image", "source": {"type": "url", "url": url}}
+
+    def _process_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process messages to handle different content types"""
         processed = []
 
@@ -526,121 +540,25 @@ class Pipe:
                 for item in content:
                     item_type = item.get("type")
                     if item_type == "text":
-                        processed_content.append({
-                            "type": "text",
-                            "text": item.get("text", "")
-                        })
-                    # Add image/document processing here if needed
+                        processed_content.append(
+                            {"type": "text", "text": item.get("text", "")}
+                        )
+                    elif item_type == "image_url":
+                        # Transform OpenAI format to Anthropic format
+                        transformed = self._transform_image_content(item)
+                        processed_content.append(transformed)
+                        logger.debug("Transformed image_url to Anthropic image format")
                     else:
                         # Pass through other types as-is
                         processed_content.append(item)
             else:
                 processed_content = [{"type": "text", "text": str(content)}]
 
-            processed.append({
-                "role": message["role"],
-                "content": processed_content
-            })
+            processed.append({"role": message["role"], "content": processed_content})
 
         return processed
 
-    # ==================== STATUS & EVENT EMITTERS ====================
-
-    async def emit_status(
-        self,
-        __event_emitter__,
-        message: str,
-        done: bool = False,
-        hidden: bool = False
-    ):
-        """Emit status update to UI"""
-        if not self.valves.SHOW_PROCESSING_STATUS or not __event_emitter__:
-            return
-
-        try:
-            await __event_emitter__({
-                "type": "status",
-                "data": {
-                    "description": message,
-                    "done": done,
-                    "hidden": hidden
-                }
-            })
-        except Exception as e:
-            logger.error(f"Failed to emit status: {e}")
-
     # ==================== FORMATTING FUNCTIONS ====================
-
-    def _format_thinking_section(self, state: StreamingState) -> str:
-        """Format the complete thinking section with web searches"""
-        mode = self.user_valves.THINKING_DISPLAY_MODE
-
-        if mode == "hidden" or not self.valves.SHOW_THINKING_PROCESS:
-            return ""
-
-        if not state.thinking_buffer and not state.web_searches:
-            return ""
-
-        # Default to collapsed if not specified
-        is_open = "open" if mode == "expanded" else ""
-
-        output = f"\n\n<details {is_open}>\n"
-        output += "<summary>🧠 Claude's Reasoning Process (click to expand)</summary>\n\n"
-
-        if state.thinking_buffer:
-            output += "```thinking\n"
-            output += state.thinking_buffer
-            output += "\n```\n"
-
-        # Append web search results
-        if state.web_searches:
-            output += "\n\n### Web Searches Performed:\n\n"
-            for search in state.web_searches:
-                output += self._format_web_search_card(search) + "\n\n"
-
-        output += "\n</details>\n\n"
-        return output
-
-    def _format_web_search_card(self, search: WebSearchResult) -> str:
-        """Format a web search result card"""
-        if not self.valves.SHOW_WEB_SEARCH_DETAILS:
-            return f"🔍 **Searched:** {search.query}\n\n---"
-
-        output = f"🔍 **Web Search: \"{search.query}\"**\n\n"
-        output += "**Results Found:**\n\n"
-
-        for i, result in enumerate(search.results, 1):
-            title = result.get("title", "Untitled")
-            url = result.get("url", "")
-            page_age = result.get("page_age", "")
-
-            output += f"{i}. **{title}**\n"
-            if url:
-                output += f"   🔗 {url}\n"
-            if page_age:
-                output += f"   📅 {page_age}\n"
-            output += "\n"
-
-        output += "---"
-        return output
-
-    def _format_citation_card(self, citation: CitationData, index: int) -> str:
-        """Format a citation card"""
-        if not self.valves.SHOW_CITATIONS:
-            return ""
-
-        output = "\n\n---\n"
-        output += f"📚 **Source [{index}]: {citation.title}**\n"
-        output += f"🔗 {citation.url}\n"
-
-        if citation.cited_text:
-            excerpt = citation.cited_text[:150]
-            if len(citation.cited_text) > 150:
-                excerpt += "..."
-            output += f"📝 \"{excerpt}\"\n"
-
-        output += "---\n"
-        return output
 
     def _format_token_usage(self, usage: Dict[str, Any]) -> str:
         """Format token usage statistics in collapsible section"""
@@ -648,7 +566,7 @@ class Pipe:
             return ""
 
         output = "\n\n<details>\n"
-        output += "<summary>📊 Token Usage</summary>\n\n"
+        output += "<summary>Token Usage</summary>\n\n"
 
         # Cache statistics
         cache_read = usage.get("cache_read_input_tokens", 0)
@@ -657,23 +575,25 @@ class Pipe:
         if cache_read > 0:
             total_input = usage.get("input_tokens", 0) + cache_read
             savings_pct = (cache_read / total_input * 100) if total_input > 0 else 0
-            output += f"- 💾 **Cache Hit:** {cache_read:,} tokens ({savings_pct:.0f}% saved)\n"
+            output += (
+                f"- **Cache Hit:** {cache_read:,} tokens ({savings_pct:.0f}% saved)\n"
+            )
 
         if cache_created > 0:
-            output += f"- 📝 **Cached:** {cache_created:,} tokens\n"
+            output += f"- **Cached:** {cache_created:,} tokens\n"
 
         # Token counts
         if "thinking_tokens" in usage:
-            output += f"- 🧠 **Thinking:** {usage['thinking_tokens']:,} tokens\n"
+            output += f"- **Thinking:** {usage['thinking_tokens']:,} tokens\n"
 
-        output += f"- 📥 **Input:** {usage.get('input_tokens', 0):,} tokens\n"
-        output += f"- 📤 **Output:** {usage.get('output_tokens', 0):,} tokens\n"
+        output += f"- **Input:** {usage.get('input_tokens', 0):,} tokens\n"
+        output += f"- **Output:** {usage.get('output_tokens', 0):,} tokens\n"
 
         # Tool usage
         server_tool_use = usage.get("server_tool_use", {})
         web_search_count = server_tool_use.get("web_search_requests", 0)
         if web_search_count > 0:
-            output += f"- 🔍 **Web Searches:** {web_search_count}\n"
+            output += f"- **Web Searches:** {web_search_count}\n"
 
         output += "\n</details>\n"
         return output
@@ -686,22 +606,20 @@ class Pipe:
         headers: Dict[str, str],
         payload: Dict[str, Any],
         user_valves,
-        __event_emitter__=None
+        __event_emitter__=None,
     ) -> Generator[str, None, None]:
-        """Stream response with progressive disclosure"""
+        """Stream response with <think> tags for reasoning"""
 
         state = StreamingState()
         final_usage = {}
 
         try:
-            await self.emit_status(__event_emitter__, "🚀 Connecting to Claude...")
-
             with requests.post(
                 url,
                 headers=headers,
                 json=payload,
                 stream=True,
-                timeout=(30, self.valves.REQUEST_TIMEOUT)
+                timeout=(30, self.valves.REQUEST_TIMEOUT),
             ) as response:
 
                 if response.status_code != 200:
@@ -713,15 +631,12 @@ class Pipe:
                     elif response.status_code == 400:
                         msg = f"❌ **Bad request**: {error_detail}"
                     else:
-                        msg = f"❌ **API Error ({response.status_code})**: {error_detail}"
+                        msg = (
+                            f"❌ **API Error ({response.status_code})**: {error_detail}"
+                        )
 
-                    await self.emit_status(__event_emitter__, msg, done=True)
                     yield msg
                     return
-
-                await self.emit_status(
-                    __event_emitter__, "✅ Connected", done=True, hidden=True
-                )
 
                 for line in response.iter_lines():
                     if not line:
@@ -759,59 +674,83 @@ class Pipe:
                         state.current_block_index = data.get("index", 0)
 
                         if block_type == "thinking":
-                            state.thinking_state = ThinkingState.IN_PROGRESS
-                            # Show simple thinking status
-                            await self.emit_status(
-                                __event_emitter__,
-                                "🧠 Thinking...",
-                                done=True,
-                                hidden=True
-                            )
-                            logger.debug("Thinking started")
+                            # DON'T set state here - let first thinking_delta open the tag
+                            logger.debug("Thinking content block started")
 
                         elif block_type == "text":
                             # Check for citations in this text block
                             if "citations" in content_block:
-                                logger.info(f"Found {len(content_block['citations'])} citations in content_block_start")
+                                logger.info(
+                                    f"Found {len(content_block['citations'])} citations in content_block_start"
+                                )
                                 for cit in content_block["citations"]:
-                                    state.citations.append(CitationData(
-                                        url=cit.get("url", ""),
-                                        title=cit.get("title", ""),
-                                        cited_text=cit.get("cited_text", ""),
-                                        encrypted_index=cit.get("encrypted_index", "")
-                                    ))
+                                    state.citations.append(
+                                        CitationData(
+                                            url=cit.get("url", ""),
+                                            title=cit.get("title", ""),
+                                            cited_text=cit.get("cited_text", ""),
+                                            encrypted_index=cit.get(
+                                                "encrypted_index", ""
+                                            ),
+                                        )
+                                    )
 
-                            # Response starting - mark thinking as completed
+                            # Response starting - close thinking tag if open
                             if state.thinking_state == ThinkingState.IN_PROGRESS:
+                                yield "\n</think>\n\n"
                                 state.thinking_state = ThinkingState.COMPLETED
                                 logger.debug("Thinking completed, response starting")
 
                         elif block_type == "server_tool_use":
                             tool_name = content_block.get("name")
+                            logger.info(
+                                f"Server tool use: {tool_name}, block_index={state.current_block_index}"
+                            )
                             if tool_name == "web_search":
-                                query = content_block.get("input", {}).get("query", "")
-                                # If query is empty, we'll try to get it from input_json_delta later
-                                if not query:
+                                # Safely extract query - input might be a string or dict
+                                input_data = content_block.get("input", {})
+                                logger.info(
+                                    f"Input data type: {type(input_data)}, value: {input_data}"
+                                )
+                                if isinstance(input_data, dict):
+                                    query = input_data.get("query", "")
+                                    logger.info(f"Query from input dict: '{query}'")
+                                else:
                                     query = ""  # Will be populated by input_json_delta
+                                    logger.info(
+                                        f"Input is not dict, query will come from input_json_delta"
+                                    )
                                 state.current_search = WebSearchResult(query=query)
-                                logger.debug(f"Web search started: {query if query else '(query pending)'}")
+                                logger.info(
+                                    f"Created search object with query='{query}', block_index={state.current_block_index}"
+                                )
 
                         elif block_type == "web_search_tool_result":
                             # Capture search results - they're in a "content" array
+                            logger.info(
+                                f"web_search_tool_result block, current_search={'exists' if state.current_search else 'None'}"
+                            )
                             if state.current_search:
                                 content_array = content_block.get("content", [])
+                                logger.info(
+                                    f"Result content_array has {len(content_array)} items"
+                                )
                                 # Extract web_search_result items
                                 results = []
                                 for item in content_array:
                                     if item.get("type") == "web_search_result":
-                                        results.append({
-                                            "title": item.get("title", ""),
-                                            "url": item.get("url", ""),
-                                            "page_age": item.get("page_age", "")
-                                            # Note: encrypted_content is for Claude's use, not display
-                                        })
+                                        results.append(
+                                            {
+                                                "title": item.get("title", ""),
+                                                "url": item.get("url", ""),
+                                                "page_age": item.get("page_age", ""),
+                                                # Note: encrypted_content is for Claude's use, not display
+                                            }
+                                        )
                                 state.current_search.results = results
-                                logger.info(f"Captured {len(results)} search results for: {state.current_search.query}")
+                                logger.info(
+                                    f"Captured {len(results)} search results. Current query: '{state.current_search.query}'"
+                                )
 
                     # Content block delta
                     elif event_type == "content_block_delta":
@@ -821,46 +760,84 @@ class Pipe:
                         if delta_type == "thinking_delta":
                             thinking_text = delta.get("thinking", "")
                             state.thinking_buffer += thinking_text
-                            # No status updates during thinking - keep it simple!
+                            # Start <think> tag on first thinking delta
+                            if state.thinking_state == ThinkingState.NOT_STARTED:
+                                yield "\n<think>\n"
+                                state.thinking_state = ThinkingState.IN_PROGRESS
+                            # Stream thinking text in real-time
+                            yield thinking_text
 
                         elif delta_type == "input_json_delta":
-                            # Web search query streaming - this is where the query actually comes from!
+                            # Web search query streaming - accumulate partial JSON fragments!
+                            partial_json = delta.get("partial_json", "")
+                            logger.info(
+                                f"input_json_delta received, fragment: {partial_json[:50]}"
+                            )
                             if state.current_search:
-                                partial_json = delta.get("partial_json", "")
-                                # Try to extract query from partial JSON
+                                # Accumulate the fragment
+                                state.current_search.partial_json_buffer += partial_json
+                                logger.debug(
+                                    f"Buffer now: {state.current_search.partial_json_buffer[:100]}"
+                                )
+
+                                # Try to parse the accumulated buffer
                                 try:
-                                    parsed = json.loads(partial_json)
+                                    parsed = json.loads(
+                                        state.current_search.partial_json_buffer
+                                    )
+                                    logger.info(
+                                        f"✅ Successfully parsed accumulated JSON: {parsed}"
+                                    )
                                     if "query" in parsed:
                                         state.current_search.query = parsed["query"]
-                                        logger.info(f"Updated search query from input_json_delta: {parsed['query']}")
-                                except json.JSONDecodeError:
-                                    # Partial JSON may not be complete yet
-                                    logger.debug(f"Partial JSON not yet complete: {partial_json[:100]}")
+                                        logger.info(
+                                            f"✅ Extracted search query: '{parsed['query']}'"
+                                        )
+                                    else:
+                                        logger.warning(
+                                            f"No 'query' field in parsed JSON: {parsed}"
+                                        )
+                                except json.JSONDecodeError as e:
+                                    # Still incomplete - keep accumulating
+                                    logger.debug(
+                                        f"Buffer not yet complete JSON, continuing to accumulate..."
+                                    )
+                            else:
+                                logger.warning(
+                                    f"⚠️ input_json_delta received but state.current_search is None!"
+                                )
 
                         elif delta_type == "text_delta":
                             text = delta.get("text", "")
                             state.response_buffer += text
+                            # Close thinking tag if still open
+                            if state.thinking_state == ThinkingState.IN_PROGRESS:
+                                yield "\n</think>\n\n"
+                                state.thinking_state = ThinkingState.COMPLETED
                             # Stream response text
                             yield text
 
                     # Content block stop
                     elif event_type == "content_block_stop":
+                        stop_index = data.get("index", -1)
+                        logger.info(
+                            f"content_block_stop for block_index={stop_index}, block_type={state.current_block_type}"
+                        )
                         if state.current_block_type == "web_search_tool_result":
                             # Finalize current search (display at end instead of inline)
                             if state.current_search:
-                                logger.info(f"Finalizing search with query='{state.current_search.query}' and {len(state.current_search.results)} results")
+                                logger.info(
+                                    f"🔚 Finalizing search with query='{state.current_search.query}' and {len(state.current_search.results)} results"
+                                )
                                 state.web_searches.append(state.current_search)
 
                                 # Just log, don't display inline
                                 if state.current_search.results:
-                                    logger.info(f"Search '{state.current_search.query}' found {len(state.current_search.results)} results")
+                                    logger.info(
+                                        f"Search '{state.current_search.query}' found {len(state.current_search.results)} results"
+                                    )
 
-                                await self.emit_status(
-                                    __event_emitter__,
-                                    f"✅ Search complete",
-                                    done=True,
-                                    hidden=True
-                                )
+                                logger.info(f"Setting state.current_search = None")
                                 state.current_search = None
                                 state.current_search_results = []
 
@@ -873,30 +850,30 @@ class Pipe:
                             content_blocks = data["delta"]["content"]
                             for block in content_blocks:
                                 if block.get("type") == "text" and "citations" in block:
-                                    logger.info(f"Found {len(block['citations'])} citations in message_delta")
+                                    logger.info(
+                                        f"Found {len(block['citations'])} citations in message_delta"
+                                    )
                                     for cit in block["citations"]:
-                                        state.citations.append(CitationData(
-                                            url=cit.get("url", ""),
-                                            title=cit.get("title", ""),
-                                            cited_text=cit.get("cited_text", ""),
-                                            encrypted_index=cit.get("encrypted_index", "")
-                                        ))
+                                        state.citations.append(
+                                            CitationData(
+                                                url=cit.get("url", ""),
+                                                title=cit.get("title", ""),
+                                                cited_text=cit.get("cited_text", ""),
+                                                encrypted_index=cit.get(
+                                                    "encrypted_index", ""
+                                                ),
+                                            )
+                                        )
 
                     # Message stop
                     elif event_type == "message_stop":
-                        # If thinking never completed, mark it as done
+                        # Close thinking tag if still open
                         if state.thinking_state == ThinkingState.IN_PROGRESS:
+                            yield "\n</think>\n"
                             state.thinking_state = ThinkingState.COMPLETED
 
                 # Extract citations from all events
                 logger.info(f"Processing {len(state.all_events)} events for citations")
-
-                # Debug: Find and log events containing citations
-                events_with_citations = [e for e in state.all_events if 'citations' in str(e)]
-                if events_with_citations:
-                    logger.info(f"Found {len(events_with_citations)} events containing 'citations' keyword")
-                    # Log first citation event structure
-                    logger.debug(f"First citation event structure: {json.dumps(events_with_citations[0], indent=2)}")
 
                 for event in state.all_events:
                     event_type = event.get("type")
@@ -907,14 +884,20 @@ class Pipe:
                         content = message.get("content", [])
                         for block in content:
                             if block.get("type") == "text" and "citations" in block:
-                                logger.info(f"Found {len(block['citations'])} citations in message_start")
+                                logger.info(
+                                    f"Found {len(block['citations'])} citations in message_start"
+                                )
                                 for cit in block["citations"]:
-                                    state.citations.append(CitationData(
-                                        url=cit.get("url", ""),
-                                        title=cit.get("title", ""),
-                                        cited_text=cit.get("cited_text", ""),
-                                        encrypted_index=cit.get("encrypted_index", "")
-                                    ))
+                                    state.citations.append(
+                                        CitationData(
+                                            url=cit.get("url", ""),
+                                            title=cit.get("title", ""),
+                                            cited_text=cit.get("cited_text", ""),
+                                            encrypted_index=cit.get(
+                                                "encrypted_index", ""
+                                            ),
+                                        )
+                                    )
 
                     # Check content_block_stop for complete blocks
                     elif event_type == "content_block_stop":
@@ -922,46 +905,48 @@ class Pipe:
                         if "content_block" in event:
                             block = event["content_block"]
                             if block.get("type") == "text" and "citations" in block:
-                                logger.info(f"Found {len(block['citations'])} citations in content_block_stop")
+                                logger.info(
+                                    f"Found {len(block['citations'])} citations in content_block_stop"
+                                )
                                 for cit in block["citations"]:
-                                    state.citations.append(CitationData(
-                                        url=cit.get("url", ""),
-                                        title=cit.get("title", ""),
-                                        cited_text=cit.get("cited_text", ""),
-                                        encrypted_index=cit.get("encrypted_index", "")
-                                    ))
+                                    state.citations.append(
+                                        CitationData(
+                                            url=cit.get("url", ""),
+                                            title=cit.get("title", ""),
+                                            cited_text=cit.get("cited_text", ""),
+                                            encrypted_index=cit.get(
+                                                "encrypted_index", ""
+                                            ),
+                                        )
+                                    )
 
-                # Show thinking details if mode is "visible"
-                if user_valves.THINKING_DISPLAY_MODE == "visible":
-                    # Show reasoning in collapsible section
-                    if state.thinking_buffer and self.valves.SHOW_THINKING_PROCESS:
-                        yield "\n\n<details>\n"
-                        yield "<summary>🧠 Reasoning Process</summary>\n\n"
-                        yield "```\n"
-                        yield state.thinking_buffer
-                        yield "\n```\n\n"
-                        yield "</details>\n\n"
-                        logger.info(f"Displayed reasoning in collapsible section ({len(state.thinking_buffer)} chars)")
+                # Show web searches in collapsible section (no icon)
+                if self.valves.SHOW_WEB_SEARCH_DETAILS and state.web_searches:
+                    yield "\n\n<details>\n"
+                    yield "<summary>Web Searches</summary>\n\n"
+                    for i, search in enumerate(state.web_searches, 1):
+                        query_display = (
+                            search.query if search.query else "(query not captured)"
+                        )
+                        yield f"**Search {i}:** {query_display}\n"
+                        if search.results:
+                            yield f"- Found {len(search.results)} results\n"
+                            for j, result in enumerate(
+                                search.results[:3], 1
+                            ):  # Show top 3
+                                title = result.get("title", "Untitled")
+                                yield f"  {j}. {title}\n"
+                        yield "\n"
+                    yield "</details>\n\n"
+                    logger.info(
+                        f"Displayed {len(state.web_searches)} web searches in collapsible section"
+                    )
 
-                    # Show web searches in collapsible section
-                    if state.web_searches:
-                        yield "<details>\n"
-                        yield "<summary>🔍 Web Searches</summary>\n\n"
-                        for i, search in enumerate(state.web_searches, 1):
-                            query_display = search.query if search.query else "(query not captured - check logs)"
-                            yield f"**Search {i}:** {query_display}\n"
-                            if search.results:
-                                yield f"- Found {len(search.results)} results\n"
-                                for j, result in enumerate(search.results[:3], 1):  # Show top 3
-                                    title = result.get('title', 'Untitled')
-                                    yield f"  {j}. {title}\n"
-                            yield "\n"
-                        yield "</details>\n\n"
-                        logger.info(f"Displayed {len(state.web_searches)} web searches in collapsible section")
-
-                # Show citations (formal API citations)
+                # Emit citation events for clickable chips
                 if state.citations:
-                    logger.info(f"Emitting {len(state.citations)} formal citations as citation chips")
+                    logger.info(
+                        f"Emitting {len(state.citations)} formal citations as citation chips"
+                    )
                     for i, citation in enumerate(state.citations, 1):
                         # Build document text with cited text if available
                         document_text = citation.title
@@ -973,29 +958,35 @@ class Pipe:
 
                         # Emit citation event - creates clickable citation chip in UI!
                         if __event_emitter__:
-                            await __event_emitter__({
-                                "type": "citation",
-                                "data": {
-                                    "document": [document_text],
-                                    "metadata": [{"source": citation.url}],
-                                    "source": {
-                                        "name": f"[{i}]",
-                                        "type": "citation",
-                                        "urls": [citation.url]
-                                    }
+                            await __event_emitter__(
+                                {
+                                    "type": "citation",
+                                    "data": {
+                                        "document": [document_text],
+                                        "metadata": [{"source": citation.url}],
+                                        "source": {
+                                            "name": f"[{i}]",
+                                            "type": "citation",
+                                            "urls": [citation.url],
+                                        },
+                                    },
                                 }
-                            })
-                    logger.info(f"Emitted {len(state.citations)} formal citation events")
+                            )
+                    logger.info(
+                        f"Emitted {len(state.citations)} formal citation events"
+                    )
                 # Fallback: If no formal citations but we have web searches, emit as citation events
                 elif state.web_searches and any(s.results for s in state.web_searches):
-                    logger.info("No formal citations, emitting web search results as citation chips")
+                    logger.info(
+                        "No formal citations, emitting web search results as citation chips"
+                    )
 
                     ref_num = 1
                     for search in state.web_searches:
                         for result in search.results:
-                            title = result.get('title', 'Source')
-                            url = result.get('url', '')
-                            page_age = result.get('page_age', '')
+                            title = result.get("title", "Source")
+                            url = result.get("url", "")
+                            page_age = result.get("page_age", "")
 
                             # Build document text with page age if available
                             document_text = title
@@ -1004,75 +995,53 @@ class Pipe:
 
                             # Emit citation event - creates clickable citation chip in UI!
                             if __event_emitter__:
-                                await __event_emitter__({
-                                    "type": "citation",
-                                    "data": {
-                                        "document": [document_text],
-                                        "metadata": [{"source": url}],
-                                        "source": {
-                                            "name": f"[{ref_num}]",
-                                            "type": "web_search_results",
-                                            "urls": [url]
-                                        }
+                                await __event_emitter__(
+                                    {
+                                        "type": "citation",
+                                        "data": {
+                                            "document": [document_text],
+                                            "metadata": [{"source": url}],
+                                            "source": {
+                                                "name": f"[{ref_num}]",
+                                                "type": "web_search_results",
+                                                "urls": [url],
+                                            },
+                                        },
                                     }
-                                })
+                                )
                             ref_num += 1
 
                     logger.info(f"Emitted {ref_num - 1} citation events")
-                else:
-                    logger.warning("No citations or web search results found")
-                    # If debug logging, show where we looked
-                    if self.valves.LOG_LEVEL == "DEBUG":
-                        events_with_cit = [e for e in state.all_events if 'citations' in str(e)]
 
-                        yield "\n\n---\n**DEBUG**: No citations found. Checked:\n"
-                        yield f"- {len(state.all_events)} total events\n"
-                        yield f"- Text blocks in content_block_start: {sum(1 for e in state.all_events if e.get('type') == 'content_block_start' and e.get('content_block', {}).get('type') == 'text')}\n"
-                        yield f"- Events with 'citations' key: {len(events_with_cit)}\n"
-
-                        if events_with_cit:
-                            yield "\n**Sample citation event:**\n```json\n"
-                            yield json.dumps(events_with_cit[0], indent=2)[:1000]
-                            yield "\n```\n"
-
-                        yield "---\n"
-
-                # Show token usage
+                # Show token usage (no icon)
                 if final_usage:
                     usage_formatted = self._format_token_usage(final_usage)
                     if usage_formatted:
                         yield usage_formatted
 
-                await self.emit_status(
-                    __event_emitter__, "✅ Complete", done=True, hidden=True
-                )
-
         except requests.exceptions.Timeout:
-            error_msg = "\n\n⏱️ **Request timed out**. Partial response may be shown above."
+            error_msg = (
+                "\n\n⏱️ **Request timed out**. Partial response may be shown above."
+            )
             logger.error("Request timeout")
-            await self.emit_status(__event_emitter__, error_msg, done=True)
             yield error_msg
 
         except requests.exceptions.ConnectionError:
-            error_msg = "\n\n🔌 **Connection error**. Please check your internet connection."
+            error_msg = (
+                "\n\n🔌 **Connection error**. Please check your internet connection."
+            )
             logger.error("Connection error")
-            await self.emit_status(__event_emitter__, error_msg, done=True)
             yield error_msg
 
         except Exception as e:
             error_msg = f"\n\n❌ **Unexpected error**: {str(e)}"
             logger.error(f"Unexpected error in stream_response: {e}", exc_info=True)
-            await self.emit_status(__event_emitter__, error_msg, done=True)
             yield error_msg
 
     # ==================== NON-STREAMING IMPLEMENTATION ====================
 
     def non_stream_response(
-        self,
-        url: str,
-        headers: Dict[str, str],
-        payload: Dict[str, Any],
-        user_valves
+        self, url: str, headers: Dict[str, str], payload: Dict[str, Any], user_valves
     ) -> str:
         """Handle non-streaming requests"""
         try:
@@ -1080,7 +1049,7 @@ class Pipe:
                 url,
                 headers=headers,
                 json=payload,
-                timeout=(30, self.valves.REQUEST_TIMEOUT)
+                timeout=(30, self.valves.REQUEST_TIMEOUT),
             )
 
             if response.status_code != 200:
@@ -1099,11 +1068,13 @@ class Pipe:
                     # Extract citations
                     if "citations" in block:
                         for cit in block["citations"]:
-                            citations.append(CitationData(
-                                url=cit.get("url", ""),
-                                title=cit.get("title", ""),
-                                cited_text=cit.get("cited_text", "")
-                            ))
+                            citations.append(
+                                CitationData(
+                                    url=cit.get("url", ""),
+                                    title=cit.get("title", ""),
+                                    cited_text=cit.get("cited_text", ""),
+                                )
+                            )
 
                 elif block_type == "thinking":
                     thinking_parts.append(block.get("thinking", ""))
@@ -1111,21 +1082,11 @@ class Pipe:
             # Assemble response
             result = ""
 
-            if thinking_parts and self.valves.SHOW_THINKING_PROCESS:
-                mode = user_valves.THINKING_DISPLAY_MODE
-                if mode != "hidden":
-                    is_open = "open" if mode == "expanded" else ""
-                    result += f"\n\n<details {is_open}>\n"
-                    result += "<summary>🧠 Claude's Reasoning Process</summary>\n\n"
-                    result += "".join(thinking_parts)
-                    result += "\n\n</details>\n\n"
+            if thinking_parts:
+                result += f"\n<think>\n{''.join(thinking_parts)}\n</think>\n\n"
 
             if content_parts:
                 result += "".join(content_parts)
-
-            if citations:
-                for i, citation in enumerate(citations, 1):
-                    result += self._format_citation_card(citation, i)
 
             if "usage" in data:
                 result += self._format_token_usage(data["usage"])
@@ -1143,7 +1104,7 @@ class Pipe:
         body: Dict[str, Any],
         __user__: Optional[Dict[str, Any]] = None,
         __event_emitter__=None,
-        __event_call__=None
+        __event_call__=None,
     ):
         """Main entry point for request processing"""
 
@@ -1155,8 +1116,10 @@ class Pipe:
             return "Error: No messages in request"
 
         # Check for conflicting domain filters
-        if (self.valves.WEB_SEARCH_DOMAIN_ALLOWLIST and
-            self.valves.WEB_SEARCH_DOMAIN_BLOCKLIST):
+        if (
+            self.valves.WEB_SEARCH_DOMAIN_ALLOWLIST
+            and self.valves.WEB_SEARCH_DOMAIN_BLOCKLIST
+        ):
             return "Error: Cannot use both allowed_domains and blocked_domains. Please use only one."
 
         try:

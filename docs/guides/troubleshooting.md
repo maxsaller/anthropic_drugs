@@ -1,6 +1,8 @@
 # Troubleshooting Guide
 
-## 🐛 Common Issues and Solutions
+> **Applies to:** Claude Sonnet 4.5 | `src/steroid_v4-5.py` (v4.1.0)
+
+## Common Issues and Solutions
 
 ### Installation & Setup
 
@@ -155,7 +157,7 @@ ENABLE_MY_WEB_SEARCH: true
 **4. Check beta headers:**
 Logs should show:
 ```
-Beta headers: ...,web-search-2025-03-05,...
+Beta headers (Sonnet 4.5): ...,web-search-2025-03-05,...
 ```
 
 ---
@@ -319,7 +321,7 @@ ENABLE_SKILL_PDF: true
 **4. Check beta headers:**
 Logs should show:
 ```
-Beta headers: ...,code-execution-2025-08-25,skills-2025-10-02,files-api-2025-04-14,...
+Beta headers (Sonnet 4.5): ...,code-execution-2025-08-25,skills-2025-10-02,files-api-2025-04-14,...
 ```
 
 ---

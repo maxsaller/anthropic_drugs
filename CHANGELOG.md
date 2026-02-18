@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.1.0] - 2025-11-17
 
+> **Source file:** `src/steroid_v4-5.py` | **Model:** Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`)
+
 ### Fixed
 - Image pasting now works correctly - transforms OpenAI `image_url` format to Anthropic `image` format
 - Support for both base64-encoded images and external image URLs
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug logging for image transformation details
 
 ## [4.0.0] - 2025-11-13
+
+> **Source file:** `src/steroid_v4-5.py` (originally `function.py`) | **Model:** Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`)
 
 ### Added
 - ✅ **`<think>` tag support** for collapsible, real-time thinking display
@@ -74,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ```
 
 ### Migration from v3
-- Replace `claude_sonnet_complete_v3.py` with `function.py`
+- Replace `claude_sonnet_complete_v3.py` with `src/steroid_v4-5.py` (previously `function.py`)
 - All valve settings preserved
 - Improved UX with no configuration changes needed
 
@@ -152,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### v3.0.0 → v4.0.0
 - **No breaking changes to valves** - All settings preserved
 - **UI changes only** - Better UX, same functionality
-- **Drop-in replacement** - Copy new `function.py`, done!
+- **Drop-in replacement** - Copy new `src/steroid_v4-5.py` (previously `function.py`), done!
+- **Source file moved** - `function.py` relocated to `src/steroid_v4-5.py`
 
 ---
 
