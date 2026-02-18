@@ -1,6 +1,6 @@
-# Claude Sonnet 4.5 Complete for OpenWebUI
+# Claude Opus 4.6 Complete for OpenWebUI
 
-> **Production-ready Claude integration with extended thinking, web search, citations, skills, and prompt caching**
+> **Production-ready Claude integration with adaptive thinking, web search, web fetch, citations, skills, prompt caching, and fast mode**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -8,10 +8,15 @@
 
 ## ✨ Features
 
-- **🧠 Extended Thinking** - Real-time reasoning with collapsible `<think>` tags, configurable budget (1K-16K tokens)
+- **🧠 Adaptive Thinking** - Always-on reasoning with collapsible `<think>` tags, effort-based depth control (low/medium/high/max)
 - **🔍 Web Search** - Powered by Anthropic's API with domain filtering and automatic query capture
+- **🌐 Web Fetch** - Full page reading for deep content analysis
+- **⚡ Fast Mode** - 2.5x faster inference at 6x cost for latency-sensitive workloads
 - **💾 Prompt Caching** - Up to 90% cost savings with automatic cache breakpoints
 - **📚 Citations** - Clickable citation chips from web search results
+- **🗜️ Conversation Compaction** - Automatic context compression for long conversations
+- **📦 Container Persistence** - Code execution containers persist across turns within a chat
+- **💰 Cost Estimation** - Per-message cost estimates in token usage display
 - **🛠️ Skills & Code** - Pre-built skills (Excel, PowerPoint, Word, PDF) + custom skill support
 - **🖼️ Image Support** - Paste images directly into chat for multimodal interactions
 - **🎨 Clean UX** - Collapsible sections, streaming responses, minimal design
@@ -26,7 +31,7 @@ Visit [console.anthropic.com](https://console.anthropic.com/) and generate an AP
 
 1. Navigate to **Workspace → Functions** in OpenWebUI
 2. Click **+ Add Function**
-3. Copy the contents of [`src/steroid_v4-5.py`](src/steroid_v4-5.py)
+3. Copy the contents of [`src/steroid_v4-6.py`](src/steroid_v4-6.py) (or [`src/steroid_v4-5.py`](src/steroid_v4-5.py) for Sonnet/Opus 4.5)
 4. Paste into the editor and click **Save**
 
 ### 3. Configure
@@ -37,7 +42,7 @@ Visit [console.anthropic.com](https://console.anthropic.com/) and generate an AP
 
 ### 4. Start Chatting
 
-Select "Claude Sonnet 4.5 (Complete)" from the model dropdown. Extended thinking and web search are enabled by default!
+Select "Claude Opus 4.6 (Complete)" from the model dropdown. Adaptive thinking and web search are enabled by default!
 
 ## 📖 Documentation
 
@@ -55,8 +60,8 @@ Select "Claude Sonnet 4.5 (Complete)" from the model dropdown. Extended thinking
 | Valve | Default | Description |
 |-------|---------|-------------|
 | `ANTHROPIC_API_KEY` | *(required)* | Your API key |
-| `ENABLE_EXTENDED_THINKING` | `true` | Enable reasoning display |
-| `THINKING_BUDGET_TOKENS` | `10000` | Thinking token budget |
+| `EFFORT_LEVEL` | `high` | Controls inference depth (low/medium/high/max) |
+| `ENABLE_FAST_MODE` | `false` | 2.5x faster inference at 6x cost |
 | `ENABLE_WEB_SEARCH` | `true` | Enable web search |
 | `ENABLE_PROMPT_CACHING` | `true` | Enable caching (90% savings) |
 
@@ -71,21 +76,31 @@ See [Configuration Guide](docs/guides/configuration.md) for all valves.
 → Check Docker logs: `docker logs -f open-webui`
 
 **Thinking not collapsing**
-→ Ensure OpenWebUI is updated (requires `<think>` tag support)
+→ Ensure OpenWebUI is updated (requires `<think>` tag support). Thinking is always-on in v5.0.0 (adaptive mode).
 
 See [Troubleshooting Guide](docs/guides/troubleshooting.md) for more.
 
 ## 📊 Cost Optimization
 
 - **Prompt caching**: Up to 90% savings on multi-turn conversations
-- **Thinking budget**: Reduce from 10K to 2K-5K for cost-sensitive apps
+- **Effort level**: Use `low` or `medium` for cost-sensitive apps (replaces thinking budget)
+- **Fast mode**: 2.5x faster but 6x cost -- use selectively for latency-critical tasks
 - **Cache TTL**: Use `1hour` for longer sessions
 
 See [Examples Guide](docs/guides/examples.md) for detailed optimization strategies.
 
 ## 🔄 Version History
 
-**v4.1.0** (Current) - Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`) - [`src/steroid_v4-5.py`](src/steroid_v4-5.py)
+**v5.0.0** (Current) - Claude Opus 4.6 (`claude-opus-4-6`) - [`src/steroid_v4-6.py`](src/steroid_v4-6.py)
+- ✅ Adaptive thinking (always-on, effort-based depth control)
+- ✅ Web fetch (full page reading)
+- ✅ Fast mode (2.5x faster inference)
+- ✅ Conversation compaction for long contexts
+- ✅ Container persistence across turns
+- ✅ Cost estimation in token usage
+- ✅ Async HTTP with aiohttp
+
+**v4.1.0** - Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`) - [`src/steroid_v4-5.py`](src/steroid_v4-5.py)
 - ✅ `<think>` tags for collapsible reasoning
 - ✅ Web search query accumulation fixed
 - ✅ Clean UI without icons

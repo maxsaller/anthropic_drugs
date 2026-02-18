@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-02-17
+
+> **Source file:** `src/steroid_v4-6.py` | **Model:** Claude Opus 4.6 (`claude-opus-4-6`)
+
+### Added
+- Claude Opus 4.6 model support (`claude-opus-4-6`) with 128K max output tokens
+- Adaptive thinking (replaces manual budget_tokens, always-on)
+- Effort parameter (`low`/`medium`/`high`/`max`) via `EFFORT_LEVEL` valve
+- Per-user effort override via `MY_EFFORT_LEVEL` user valve
+- Web fetch tool (`web_fetch_20260209`) for reading full page content
+- `ENABLE_WEB_FETCH` and `WEB_FETCH_MAX_USES` admin valves
+- Fast mode (2.5x speed at 6x cost) via `ENABLE_FAST_MODE` valve
+- Per-user fast mode override via `ENABLE_MY_FAST_MODE` user valve
+- Conversation compaction for long contexts via `ENABLE_COMPACTION` valve
+- `COMPACTION_TRIGGER_TOKENS` valve for trigger threshold
+- Container persistence across conversation turns for code execution
+- Cost estimation display in token usage (`SHOW_COST_ESTIMATE` valve)
+- Status indicators during tool use ("Searching the web...", "Reading web page...", "Running code...")
+- `citations_delta` streaming handler for inline citation extraction
+- `redacted_thinking` handler with safety notice display
+- `compaction` block handler
+- Citation deduplication via URL tracking (eliminates duplicates)
+- Prefill guard (strips trailing assistant messages to prevent API errors)
+
+### Changed
+- **BREAKING:** Migrated from `requests` (sync) to `aiohttp` (async) for non-blocking streaming
+- **BREAKING:** Model upgraded from Sonnet 4.5 to Opus 4.6
+- New beta headers: `code-execution-web-tools-2026-02-09`, `compact-2026-01-12`, `fast-mode-2026-02-01`
+- Web search upgraded from `web_search_20250305` to `web_search_20260209`
+- Max tokens cap increased from 8,192 to 128,000
+- Default max tokens increased from 8,192 to 16,384
+- System message always normalized to array format immediately
+- Citation extraction moved to inline (during stream) instead of post-stream rescan
+
+### Removed
+- `ENABLE_EXTENDED_THINKING` valve (adaptive thinking is always on)
+- `THINKING_BUDGET_TOKENS` valve (replaced by effort parameter)
+- `all_events` accumulation (eliminated memory leak from storing all streaming events)
+- Deprecated beta headers: `prompt-caching-2024-07-31` (GA), `web-search-2025-03-05`, `interleaved-thinking-2025-05-14`, `code-execution-2025-08-25`
+- Temperature and top_k parameters (incompatible with always-on thinking)
+- Emoji from all log messages and error messages
+
+### Fixed
+- User valves access correctly handles dict-based `__user__` parameter from OpenWebUI
+- `SHOW_CITATIONS` valve now actually controls citation emission
+- Non-streaming response now properly async with `await`
+
+### Migration from v4.1.0
+- Replace `src/steroid_v4-5.py` with `src/steroid_v4-6.py` in OpenWebUI Functions
+- Remove `ENABLE_EXTENDED_THINKING` and `THINKING_BUDGET_TOKENS` from any saved config
+- Set `EFFORT_LEVEL` to desired level (default: `high`)
+- Ensure `aiohttp` is available in your Python environment
+
+---
+
 ## [4.1.0] - 2025-11-17
 
 > **Source file:** `src/steroid_v4-5.py` | **Model:** Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`)
