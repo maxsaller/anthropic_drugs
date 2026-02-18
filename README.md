@@ -31,7 +31,7 @@ Visit [console.anthropic.com](https://console.anthropic.com/) and generate an AP
 
 1. Navigate to **Workspace → Functions** in OpenWebUI
 2. Click **+ Add Function**
-3. Copy the contents of [`src/steroid_v4-6.py`](src/steroid_v4-6.py) (or [`src/steroid_v4-5.py`](src/steroid_v4-5.py) for Sonnet/Opus 4.5)
+3. Copy the contents of [`src/opioid_v4-6.py`](src/opioid_v4-6.py) (Opus 4.6) or [`src/steroid_v4-6.py`](src/steroid_v4-6.py) (Sonnet 4.6) -- or [`src/steroid_v4-5.py`](src/steroid_v4-5.py) for Sonnet/Opus 4.5
 4. Paste into the editor and click **Save**
 
 ### 3. Configure
@@ -91,7 +91,7 @@ See [Examples Guide](docs/guides/examples.md) for detailed optimization strategi
 
 ## 🔄 Version History
 
-**v5.0.0** (Current) - Claude Opus 4.6 (`claude-opus-4-6`) - [`src/steroid_v4-6.py`](src/steroid_v4-6.py)
+**v5.0.0** (Current) - Claude Opus 4.6 (`claude-opus-4-6`) - [`src/opioid_v4-6.py`](src/opioid_v4-6.py) (Opus) · [`src/steroid_v4-6.py`](src/steroid_v4-6.py) (Sonnet)
 - ✅ Adaptive thinking (always-on, effort-based depth control)
 - ✅ Web fetch (full page reading)
 - ✅ Fast mode (2.5x faster inference)

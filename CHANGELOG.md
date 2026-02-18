@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.0] - 2026-02-17
 
-> **Source file:** `src/steroid_v4-6.py` | **Model:** Claude Opus 4.6 (`claude-opus-4-6`)
+> **Source files:** `src/opioid_v4-6.py` (Opus 4.6) · `src/steroid_v4-6.py` (Sonnet 4.6) | **Model:** Claude Opus 4.6 (`claude-opus-4-6`)
 
 ### Added
 - Claude Opus 4.6 model support (`claude-opus-4-6`) with 128K max output tokens
@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-streaming response now properly async with `await`
 
 ### Migration from v4.1.0
-- Replace `src/steroid_v4-5.py` with `src/steroid_v4-6.py` in OpenWebUI Functions
+- Replace `src/steroid_v4-5.py` with `src/opioid_v4-6.py` (Opus) or `src/steroid_v4-6.py` (Sonnet) in OpenWebUI Functions
 - Remove `ENABLE_EXTENDED_THINKING` and `THINKING_BUDGET_TOKENS` from any saved config
 - Set `EFFORT_LEVEL` to desired level (default: `high`)
 - Ensure `aiohttp` is available in your Python environment

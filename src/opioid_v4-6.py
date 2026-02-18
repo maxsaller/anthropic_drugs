@@ -1,5 +1,5 @@
 """
-title: Claude Opus 4.6 Complete v5.0
+title: Opioid - Claude Opus 4.6 Complete v5.0
 author: Enhanced by AI
 version: 5.0.0
 license: MIT
@@ -12,6 +12,7 @@ import json
 import logging
 import asyncio
 import aiohttp
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Set
@@ -69,7 +70,7 @@ class StreamingState:
 
 
 class Pipe:
-    """Claude Opus 4.6 Complete Integration for OpenWebUI"""
+    """Opioid - Claude Opus 4.6 Complete Integration for OpenWebUI"""
 
     class Valves(BaseModel):
         """Admin-configurable settings"""
@@ -231,7 +232,7 @@ class Pipe:
 
     def __init__(self):
         self.type = "manifold"
-        self.id = "claude_complete_v5"
+        self.id = "claude_opus_complete_v5"
         self.name = "claude/"
         self.citation = False  # CRITICAL: Disable OpenWebUI auto-citations
 
@@ -239,20 +240,20 @@ class Pipe:
             ANTHROPIC_API_KEY=os.getenv("ANTHROPIC_API_KEY", "")
         )
         self.user_valves = self.UserValves()
-        self._containers = {}  # chat_id -> container_id for code execution persistence
+        self._containers = OrderedDict()  # chat_id -> container_id for code execution persistence
 
         # Set logging level
         log_level = getattr(logging, self.valves.LOG_LEVEL)
         logger.setLevel(log_level)
 
-        logger.info("Claude Opus 4.6 Complete v5.0.0 initialized")
+        logger.info("Opioid (Claude Opus 4.6) Complete v5.0.0 initialized")
 
     def pipes(self) -> List[Dict[str, str]]:
         """Return available model configurations"""
         return [
             {
-                "id": "claude-opus-4.6-complete",
-                "name": "Claude Opus 4.6 (Complete)"
+                "id": "opioid-opus-4.6-complete",
+                "name": "Opioid - Opus 4.6 (Complete)"
             }
         ]
 
@@ -437,7 +438,10 @@ class Pipe:
         if not self.valves.ENABLE_PROMPT_CACHING:
             return payload
 
-        cache_control = {"type": "ephemeral"}
+        if self.valves.CACHE_TTL == "1hour":
+            cache_control = {"type": "ephemeral", "ttl": "1h"}
+        else:
+            cache_control = {"type": "ephemeral"}
         cache_points = 0
 
         # Cache system prompt
@@ -555,6 +559,9 @@ class Pipe:
         # Prefill guard: strip trailing assistant message
         if payload["messages"] and payload["messages"][-1]["role"] == "assistant":
             payload["messages"] = payload["messages"][:-1]
+
+        if not payload["messages"]:
+            raise ValueError("No valid messages after removing assistant prefill")
 
         return payload
 
@@ -860,7 +867,7 @@ class Pipe:
                             elif block_type == "redacted_thinking":
                                 if state.thinking_state == ThinkingState.IN_PROGRESS:
                                     yield "\n</think>\n\n"
-                                    state.thinking_state = ThinkingState.COMPLETED
+                                state.thinking_state = ThinkingState.COMPLETED
                                 yield "*[Some reasoning was redacted for safety]*\n\n"
 
                             elif block_type == "compaction":
@@ -917,15 +924,16 @@ class Pipe:
 
                             elif delta_type == "citations_delta":
                                 citation = delta.get("citation", {})
-                                url_val = citation.get("url", "")
-                                if url_val and url_val not in state.seen_citation_urls:
-                                    state.seen_citation_urls.add(url_val)
-                                    state.citations.append(CitationData(
-                                        url=url_val,
-                                        title=citation.get("title", ""),
-                                        cited_text=citation.get("cited_text", ""),
-                                        encrypted_index=citation.get("encrypted_index", ""),
-                                    ))
+                                if citation.get("type") == "web_search_result_location":
+                                    url_val = citation.get("url", "")
+                                    if url_val and url_val not in state.seen_citation_urls:
+                                        state.seen_citation_urls.add(url_val)
+                                        state.citations.append(CitationData(
+                                            url=url_val,
+                                            title=citation.get("title", ""),
+                                            cited_text=citation.get("cited_text", ""),
+                                            encrypted_index=citation.get("encrypted_index", ""),
+                                        ))
 
                             elif delta_type == "signature_delta":
                                 logger.debug("Received thinking signature")
@@ -975,11 +983,22 @@ class Pipe:
                                 yield "\n</think>\n"
                                 state.thinking_state = ThinkingState.COMPLETED
 
+                        # Stream error
+                        elif event_type == "error":
+                            error_info = data.get("error", {})
+                            error_msg = error_info.get("message", "Unknown error")
+                            error_type = error_info.get("type", "unknown")
+                            logger.error(f"Stream error: {error_type} - {error_msg}")
+                            yield f"\n\n**Stream error ({error_type})**: {error_msg}"
+
                     # --- Post-stream output ---
 
                     # Store container for persistence
                     if state.container_id and chat_id:
                         self._containers[chat_id] = state.container_id
+                        self._containers.move_to_end(chat_id)
+                        while len(self._containers) > 1000:
+                            self._containers.popitem(last=False)
 
                     # Show web searches in collapsible section
                     if self.valves.SHOW_WEB_SEARCH_DETAILS and state.web_searches:

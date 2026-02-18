@@ -467,7 +467,6 @@ This checklist covers every change needed across both `src/steroid_v4-5.py` and 
 
 ### File Renaming (Recommended)
 
-- [ ] Rename `src/steroid_v4-5.py` to `src/steroid_v4-6.py`
 - [ ] Rename `src/opioid_v4-5.py` to `src/opioid_v4-6.py`
 
 ### Bump Version
