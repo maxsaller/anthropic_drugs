@@ -7,17 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.0] - 2026-02-17
 
-> **Source files:** `src/opioid_v4-6.py` (Opus 4.6) · `src/steroid_v4-6.py` (Sonnet 4.6) | **Model:** Claude Opus 4.6 (`claude-opus-4-6`)
+> **Source files:** `src/opioid_v4-6.py` (Opus 4.6) · `src/steroid_v4-6.py` (Sonnet 4.6) | **Models:** Claude Opus 4.6 (`claude-opus-4-6`) · Claude Sonnet 4.6 (`claude-sonnet-4-6`)
 
 ### Added
 - Claude Opus 4.6 model support (`claude-opus-4-6`) with 128K max output tokens
+- Claude Sonnet 4.6 model support (`claude-sonnet-4-6`) with 64K max output tokens
 - Adaptive thinking (replaces manual budget_tokens, always-on)
-- Effort parameter (`low`/`medium`/`high`/`max`) via `EFFORT_LEVEL` valve
+- Effort parameter (`low`/`medium`/`high`/`max`) via `EFFORT_LEVEL` valve (`max` Opus only; Sonnet defaults to `medium`)
 - Per-user effort override via `MY_EFFORT_LEVEL` user valve
 - Web fetch tool (`web_fetch_20260209`) for reading full page content
 - `ENABLE_WEB_FETCH` and `WEB_FETCH_MAX_USES` admin valves
-- Fast mode (2.5x speed at 6x cost) via `ENABLE_FAST_MODE` valve
-- Per-user fast mode override via `ENABLE_MY_FAST_MODE` user valve
+- Fast mode (2.5x speed at 6x cost) via `ENABLE_FAST_MODE` valve (Opus only)
+- Per-user fast mode override via `ENABLE_MY_FAST_MODE` user valve (Opus only)
 - Conversation compaction for long contexts via `ENABLE_COMPACTION` valve
 - `COMPACTION_TRIGGER_TOKENS` valve for trigger threshold
 - Container persistence across conversation turns for code execution
@@ -32,9 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING:** Migrated from `requests` (sync) to `aiohttp` (async) for non-blocking streaming
 - **BREAKING:** Model upgraded from Sonnet 4.5 to Opus 4.6
-- New beta headers: `code-execution-web-tools-2026-02-09`, `compact-2026-01-12`, `fast-mode-2026-02-01`
+- New beta headers: `code-execution-web-tools-2026-02-09`, `compact-2026-01-12`, `fast-mode-2026-02-01` (Opus only)
 - Web search upgraded from `web_search_20250305` to `web_search_20260209`
-- Max tokens cap increased from 8,192 to 128,000
+- Max tokens cap increased from 8,192 to 128,000 (Opus) / 64,000 (Sonnet)
 - Default max tokens increased from 8,192 to 16,384
 - System message always normalized to array format immediately
 - Citation extraction moved to inline (during stream) instead of post-stream rescan
@@ -43,7 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ENABLE_EXTENDED_THINKING` valve (adaptive thinking is always on)
 - `THINKING_BUDGET_TOKENS` valve (replaced by effort parameter)
 - `all_events` accumulation (eliminated memory leak from storing all streaming events)
-- Deprecated beta headers: `prompt-caching-2024-07-31` (GA), `web-search-2025-03-05`, `interleaved-thinking-2025-05-14`, `code-execution-2025-08-25`
+- Deprecated beta headers: `prompt-caching-2024-07-31` (GA), `web-search-2025-03-05`, `code-execution-2025-08-25`
+- `interleaved-thinking-2025-05-14` header removed from Opus (deprecated), retained for Sonnet 4.6
 - Temperature and top_k parameters (incompatible with always-on thinking)
 - Emoji from all log messages and error messages
 

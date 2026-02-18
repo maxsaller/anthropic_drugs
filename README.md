@@ -1,6 +1,6 @@
-# Claude Opus 4.6 Complete for OpenWebUI
+# Claude Opus 4.6 / Sonnet 4.6 Complete for OpenWebUI
 
-> **Production-ready Claude integration with adaptive thinking, web search, web fetch, citations, skills, prompt caching, and fast mode**
+> **Production-ready Claude integration with adaptive thinking, web search, web fetch, citations, skills, prompt caching, and fast mode (Opus)**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -8,10 +8,10 @@
 
 ## ✨ Features
 
-- **🧠 Adaptive Thinking** - Always-on reasoning with collapsible `<think>` tags, effort-based depth control (low/medium/high/max)
+- **🧠 Adaptive Thinking** - Always-on reasoning with collapsible `<think>` tags, effort-based depth control
 - **🔍 Web Search** - Powered by Anthropic's API with domain filtering and automatic query capture
 - **🌐 Web Fetch** - Full page reading for deep content analysis
-- **⚡ Fast Mode** - 2.5x faster inference at 6x cost for latency-sensitive workloads
+- **⚡ Fast Mode** - 2.5x faster inference at 6x cost (Opus only)
 - **💾 Prompt Caching** - Up to 90% cost savings with automatic cache breakpoints
 - **📚 Citations** - Clickable citation chips from web search results
 - **🗜️ Conversation Compaction** - Automatic context compression for long conversations
@@ -42,7 +42,7 @@ Visit [console.anthropic.com](https://console.anthropic.com/) and generate an AP
 
 ### 4. Start Chatting
 
-Select "Claude Opus 4.6 (Complete)" from the model dropdown. Adaptive thinking and web search are enabled by default!
+Select "Opioid - Opus 4.6 (Complete)" or "Steroid - Sonnet 4.6 (Complete)" from the model dropdown. Adaptive thinking and web search are enabled by default!
 
 ## 📖 Documentation
 
@@ -60,8 +60,8 @@ Select "Claude Opus 4.6 (Complete)" from the model dropdown. Adaptive thinking a
 | Valve | Default | Description |
 |-------|---------|-------------|
 | `ANTHROPIC_API_KEY` | *(required)* | Your API key |
-| `EFFORT_LEVEL` | `high` | Controls inference depth (low/medium/high/max) |
-| `ENABLE_FAST_MODE` | `false` | 2.5x faster inference at 6x cost |
+| `EFFORT_LEVEL` | `high` (Opus) / `medium` (Sonnet) | Controls inference depth (`max` Opus only) |
+| `ENABLE_FAST_MODE` | `false` | 2.5x faster inference at 6x cost (Opus only) |
 | `ENABLE_WEB_SEARCH` | `true` | Enable web search |
 | `ENABLE_PROMPT_CACHING` | `true` | Enable caching (90% savings) |
 
@@ -84,17 +84,17 @@ See [Troubleshooting Guide](docs/guides/troubleshooting.md) for more.
 
 - **Prompt caching**: Up to 90% savings on multi-turn conversations
 - **Effort level**: Use `low` or `medium` for cost-sensitive apps (replaces thinking budget)
-- **Fast mode**: 2.5x faster but 6x cost -- use selectively for latency-critical tasks
+- **Fast mode** (Opus only): 2.5x faster but 6x cost -- use selectively for latency-critical tasks
 - **Cache TTL**: Use `1hour` for longer sessions
 
 See [Examples Guide](docs/guides/examples.md) for detailed optimization strategies.
 
 ## 🔄 Version History
 
-**v5.0.0** (Current) - Claude Opus 4.6 (`claude-opus-4-6`) - [`src/opioid_v4-6.py`](src/opioid_v4-6.py) (Opus) · [`src/steroid_v4-6.py`](src/steroid_v4-6.py) (Sonnet)
+**v5.0.0** (Current) - [`src/opioid_v4-6.py`](src/opioid_v4-6.py) (Opus 4.6) · [`src/steroid_v4-6.py`](src/steroid_v4-6.py) (Sonnet 4.6)
 - ✅ Adaptive thinking (always-on, effort-based depth control)
 - ✅ Web fetch (full page reading)
-- ✅ Fast mode (2.5x faster inference)
+- ✅ Fast mode (Opus only, 2.5x faster inference)
 - ✅ Conversation compaction for long contexts
 - ✅ Container persistence across turns
 - ✅ Cost estimation in token usage
